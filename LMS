@@ -1,0 +1,404 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <time.h>
+
+
+#define MAX_BOOKS 100
+#define MAX_STUDENTS 100
+#define MAX_LIBRARIANS 3
+#define MAX_BORROW_DAYS 14
+#define LATE_FEE_PER_DAY 5
+
+
+typedef struct {
+    char username[50];
+    char password[50];
+} Librarian;
+
+
+typedef struct {
+    int id;
+    char title[100];
+    char author[100];
+    char category[50];
+    int borrowed;
+    int borrowed_by; 
+    time_t borrow_date;
+} Book;
+
+
+typedef struct {
+    int id;
+    char name[100];
+    int borrowed_books;
+} Student;
+
+
+void display_menu();
+int librarian_login(Librarian librarians[], int librarian_count);
+
+void admin_menu(Book *library, Student *students, int *book_count, int *student_count);
+
+void borrow_book(Book *library, Student *students, int book_count, int student_count);
+
+void return_book(Book *library, Student *students, int book_count, int student_count);
+
+void overdue_books_report(Book *library, int book_count);
+
+void add_book(Book *library, int *book_count);
+
+void remove_book(Book *library, int *book_count);
+
+void add_student(Student *students, int *student_count);
+
+void remove_student(Student *students, int *student_count);
+
+void view_books(Book *library, int book_count);
+
+void view_students(Student *students, int student_count);
+
+void save_data(Book *library, Student *students, int book_count, int student_count);
+
+void load_data(Book *library, Student *students, int *book_count, int *student_count);
+
+
+int main() {
+    
+    Librarian librarians[MAX_LIBRARIANS] = {
+        {"anu", "123"},
+        {"amarshukla", "999"},
+        {"bhumi", "123"}
+    };
+
+   
+    Book library[MAX_BOOKS] = {
+        {1, "A", "Anu1", "Fiction", 0, -1, 0},
+        {2, "B", "Anu2", "Horror", 0, -1, 0},
+        {3, "C", "Anu3", "Mystery", 0, -1, 0},
+        {4, "A", "Anu4", "Fiction", 0, -1, 0},
+        {5, "B", "Anu5", "Horror", 0, -1, 0},
+        {6, "C", "Anu6", "Mystery", 0, -1, 0},
+        {7, "A", "Anu7", "Fiction", 0, -1, 0},
+        {8, "B", "Anu8", "Horror", 0, -1, 0},
+        {9, "C", "Anu9", "Mystery", 0, -1, 0},
+        {10, "A", "Anu10", "Fiction", 0, -1, 0},
+        {11, "B", "Anu11", "Horror", 0, -1, 0},
+        {12, "C", "Anu12", "Mystery", 0, -1, 0},
+        {13, "A", "Anu13", "Fiction", 0, -1, 0},
+        {14, "B", "Anu14", "Horror", 0, -1, 0},
+        {15, "C", "Anu15", "Mystery", 0, -1, 0},
+    };
+    Student students[MAX_STUDENTS] = {
+        {111, "Ananya1", 0},
+        {112, "Ananya2", 0},
+        {113, "Ananya3", 0},
+        {114, "Ananya4", 0},
+        {115, "Ananya5", 0},
+        {116, "Ananya6", 0},
+        {117, "Ananya7", 0},
+        {118, "Ananya8", 0},
+        {119, "Ananya9", 0},
+        {120, "Ananya10", 0},
+    };
+
+    int book_count = 15;
+    int student_count = 10;
+
+   
+    load_data(library, students, &book_count, &student_count);
+
+   
+    int librarian_index = librarian_login(librarians, MAX_LIBRARIANS);
+    if (librarian_index == -1) {
+        printf("Invalid login credentials. Exiting...\n");
+        return 1;
+    }
+
+    int choice;
+    while (1) {
+        display_menu();
+        printf("Enter your choice: ");
+        scanf("%d", &choice);
+
+        switch (choice) {
+        case 1:
+            borrow_book(library, students, book_count, student_count);
+            break;
+        case 2:
+            return_book(library, students, book_count, student_count);
+            break;
+        case 3:
+            overdue_books_report(library, book_count);
+            break;
+        case 4:
+            admin_menu(library, students, &book_count, &student_count);
+            break;
+        case 5:
+            save_data(library, students, book_count, student_count);
+            printf("Exiting the system and saving data...\n");
+            exit(0);
+        default:
+            printf("Invalid choice! Please try again.\n");
+        }
+    }
+
+    return 0;
+}
+
+
+void display_menu() {
+    printf("\nLibrary Management System\n");
+    printf("1. Borrow a book\n");
+    printf("2. Return a book\n");
+    printf("3. Overdue books report\n");
+    printf("4. Admin Menu\n");
+    printf("5. Exit\n");
+}
+
+
+int librarian_login(Librarian librarians[], int librarian_count) {
+    char username[50], password[50];
+    printf("Enter librarian username: ");
+    scanf("%s", username);
+    printf("Enter librarian password: ");
+    scanf("%s", password);
+
+    for (int i = 0; i < librarian_count; i++) {
+        if (strcmp(librarians[i].username, username) == 0 && strcmp(librarians[i].password, password) == 0) {
+            printf("Login successful!\n");
+            return i;
+        }
+    }
+    return -1; 
+}
+
+
+void admin_menu(Book *library, Student *students, int *book_count, int *student_count) {
+    int choice;
+    printf("\nAdmin Menu:\n");
+    printf("1. Add a book\n");
+    printf("2. Remove a book\n");
+    printf("3. Add a student\n");
+    printf("4. Remove a student\n");
+    printf("5. View all books\n");
+    printf("6. View all students\n");
+    printf("7. Save and exit\n");
+    printf("Enter your choice: ");
+    scanf("%d", &choice);
+
+    switch (choice) {
+    case 1:
+        add_book(library, book_count);
+        break;
+    case 2:
+        remove_book(library, book_count);
+        break;
+    case 3:
+        add_student(students, student_count);
+        break;
+    case 4:
+        remove_student(students, student_count);
+        break;
+    case 5:
+        view_books(library, *book_count);
+        break;
+    case 6:
+        view_students(students, *student_count);
+        break;
+    case 7:
+        save_data(library, students, *book_count, *student_count);
+        printf("Data saved!\n");
+        exit(0);
+    default:
+        printf("Invalid choice! Returning to main menu.\n");
+    }
+}
+
+
+void add_book(Book *library, int *book_count) {
+    if (*book_count >= MAX_BOOKS) {
+        printf("Library is full. Cannot add more books.\n");
+        return;
+    }
+    Book *new_book = &library[*book_count];
+    new_book->id = *book_count + 1;
+    printf("Enter book title: ");
+    scanf(" %[^\n]", new_book->title);
+    printf("Enter author name: ");
+    scanf(" %[^\n]", new_book->author);
+    printf("Enter category: ");
+    scanf(" %[^\n]", new_book->category);
+    new_book->borrowed = 0;
+    new_book->borrowed_by = -1;
+    new_book->borrow_date = 0;
+
+    (*book_count)++;
+    printf("Book added successfully!\n");
+}
+
+
+void remove_book(Book *library, int *book_count) {
+    int book_id;
+    printf("Enter book ID to remove: ");
+    scanf("%d", &book_id);
+
+    for (int i = 0; i < *book_count; i++) {
+        if (library[i].id == book_id) {
+            for (int j = i; j < *book_count - 1; j++) {
+                library[j] = library[j + 1]; 
+                
+            }
+            (*book_count)--;
+            printf("Book removed successfully!\n");
+            return;
+        }
+    }
+    printf("Book not found!\n");
+}
+
+
+void view_books(Book *library, int book_count) {
+    printf("\nBooks in Library:\n");
+    for (int i = 0; i < book_count; i++) {
+        printf("ID: %d, Title: %s, Author: %s, Category: %s\n", library[i].id, library[i].title, library[i].author, library[i].category);
+    }
+}
+
+
+void add_student(Student *students, int *student_count) {
+    if (*student_count >= MAX_STUDENTS) {
+        printf("Cannot add more students. Maximum limit reached.\n");
+        return;
+    }
+    Student *new_student = &students[*student_count];
+    printf("Enter student name: ");
+    scanf(" %[^\n]", new_student->name);
+    new_student->id = 100 + *student_count;
+    new_student->borrowed_books = 0;
+
+    (*student_count)++;
+    printf("Student added successfully!\n");
+}
+
+
+void remove_student(Student *students, int *student_count) {
+    int student_id;
+    printf("Enter student ID to remove: ");
+    scanf("%d", &student_id);
+
+    for (int i = 0; i < *student_count; i++) {
+        if (students[i].id == student_id) {
+            for (int j = i; j < *student_count - 1; j++) {
+                students[j] = students[j + 1]; 
+                
+            }
+            (*student_count)--;
+            printf("Student removed successfully!\n");
+            return;
+        }
+    }
+    printf("Student not found!\n");
+}
+
+
+void view_students(Student *students, int student_count) {
+    printf("\nStudents in the system:\n");
+    for (int i = 0; i < student_count; i++) {
+        printf("ID: %d, Name: %s\n", students[i].id, students[i].name);
+    }
+}
+
+void borrow_book(Book *library, Student *students, int book_count, int student_count) {
+    int book_id, student_id;
+    printf("Enter student ID: ");
+    scanf("%d", &student_id);
+    printf("Enter book ID to borrow: ");
+    scanf("%d", &book_id);
+
+    if (student_id < 110 || student_id >= 110 + student_count) {
+        printf("Invalid student ID!\n");
+        return;
+    }
+
+    if (book_id <= 0 || book_id > book_count) {
+        printf("Invalid book ID!\n");
+        return;
+    }
+
+    if (library[book_id - 1].borrowed == 1) {
+        printf("This book is already borrowed by another student.\n");
+        return;
+    }
+
+    
+    library[book_id - 1].borrowed = 1;
+    library[book_id - 1].borrowed_by = student_id;
+    library[book_id - 1].borrow_date = time(NULL);
+
+    students[student_id - 100].borrowed_books++;
+    printf("Book borrowed successfully!\n");
+}
+
+
+void return_book(Book *library, Student *students, int book_count, int student_count) {
+    int book_id, student_id;
+    printf("Enter student ID: ");
+    scanf("%d", &student_id);
+    printf("Enter book ID to return: ");
+    scanf("%d", &book_id);
+
+    if (student_id < 100 || student_id >= 100 + student_count) {
+        printf("Invalid student ID!\n");
+        return;
+    }
+
+    if (book_id <= 0 || book_id > book_count) {
+        printf("Invalid book ID!\n");
+        return;
+    }
+
+    if (library[book_id - 1].borrowed == 0 || library[book_id - 1].borrowed_by != student_id) {
+        printf("This book was not borrowed by this student.\n");
+        return;
+    }
+
+
+    time_t return_date = time(NULL);
+    double days_borrowed = difftime(return_date, library[book_id - 1].borrow_date) / (60 * 60 * 24);
+
+    if (days_borrowed > MAX_BORROW_DAYS) {
+        int late_days = days_borrowed - MAX_BORROW_DAYS;
+        printf("Book returned late. Late fee: $%d\n", late_days * LATE_FEE_PER_DAY);
+    }
+
+    library[book_id - 1].borrowed = 0;
+    library[book_id - 1].borrowed_by = -1;
+    students[student_id - 100].borrowed_books--;
+
+    printf("Book returned successfully!\n");
+}
+
+void overdue_books_report(Book *library, int book_count) {
+    printf("\nOverdue Books Report:\n");
+    for (int i = 0; i < book_count; i++) {
+        if (library[i].borrowed == 1) {
+            time_t current_time = time(NULL);
+            double days_borrowed = difftime(current_time, library[i].borrow_date) / (60 * 60 * 24);
+            if (days_borrowed > MAX_BORROW_DAYS) {
+                int late_days = days_borrowed - MAX_BORROW_DAYS;
+                printf("Book: %s, Borrowed by student ID %d, Late by %d days\n", library[i].title, library[i].borrowed_by, late_days);
+            }
+        }
+    }
+}
+
+
+void save_data(Book *library, Student *students, int book_count, int student_count) {
+    
+}
+
+
+void load_data(Book *library, Student *students, int *book_count, int *student_count) {
+    
+}
